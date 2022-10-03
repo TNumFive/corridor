@@ -196,6 +196,18 @@ viw test.cpp # paste code below
 g++ test.cpp ../src/corridor.cpp -lpthread
 ```
 ```cpp
+#include "../src/corridor.hpp"
+#include <iostream>
+#include <random>
+#include <thread>
+using namespace std;
+using corridor::artifact;
+using corridor::artifact_index;
+using corridor::get_timestamp;
+using corridor::passage;
+
+mutex out;
+
 void set_art(passage &gallery)
 {
     auto start_time = get_timestamp<chrono::nanoseconds>();
@@ -232,6 +244,7 @@ void view_all_show(passage &gallery, int id)
     gallery.subscribe(id);
     uint64_t sum_up = 0;
     bool if_end = false;
+    uint64_t last = -1;
     while (!if_end)
     {
         gallery.wait_for(chrono::milliseconds(1));
