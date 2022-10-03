@@ -190,6 +190,11 @@ private:
 };
 ```
 ## 3. 使用示例
+```bash
+mkdir -p build && cd build
+viw test.cpp # paste code below
+g++ test.cpp ../src/corridor.cpp -lpthread
+```
 ```cpp
 void set_art(passage &gallery)
 {
