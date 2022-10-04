@@ -1,5 +1,4 @@
 #include "./corridor.hpp"
-#include <iostream>
 #include <limits>
 
 using namespace std;
@@ -87,7 +86,7 @@ artifact &artifact::swap(artifact &&other)
 
 passage::passage(index_type display_limit, index_type storage_limit)
 {
-    constexpr uint32_t min = 10;
+    constexpr index_type min = 10;
     this->display_limit = display_limit < min ? min : display_limit;
     this->storage_limit = storage_limit < min ? min : storage_limit;
     artifact_index init{};
@@ -124,7 +123,8 @@ void passage::decorate(artifact art)
         art.type != artifact_type::END &&
         art.type != artifact_type::ERROR)
     {
-        storage_list.emplace_back(get_timestamp<time_precision>(), std::move(art));
+        auto now = get_timestamp<time_precision>();
+        storage_list.emplace_back(now, std::move(art));
     }
     else
     {
@@ -200,17 +200,23 @@ list<artifact> passage::view(const viwer_id_type &id, size_t n)
     auto viewer_it = viewer_map.find(id);
     if (viewer_it == viewer_map.end())
     {
-        return {};
+        artifact error;
+        error.type = artifact_type::ERROR;
+        constexpr char error_msg[] = "viewer id not found";
+        error.data.reset(new uint8_t[sizeof(error_msg)]);
+        error.data_length = sizeof(error_msg);
+        std::copy(error_msg, error_msg + sizeof(error_msg), error.data.get());
+        return {error};
     }
     subscribing_lock.unlock();
-    auto &viewer_index = viewer_it->second;
+    auto &viewer_artifact_index = viewer_it->second;
     shared_lock<shared_timed_mutex> working_lock{working};
     const auto &current_index = artifact_map.rbegin()->first;
-    if (viewer_index == current_index)
+    if (viewer_artifact_index == current_index)
     {
         return {};
     }
-    auto it = artifact_map.find(viewer_index);
+    auto it = artifact_map.find(viewer_artifact_index);
     if (it == artifact_map.end())
     {
         it = artifact_map.begin();
@@ -223,7 +229,7 @@ list<artifact> passage::view(const viwer_id_type &id, size_t n)
     do
     {
         artifact_list.push_back(it->second);
-        viewer_index = it->first;
+        viewer_artifact_index = it->first;
         it++;
         n--;
     } while (it != artifact_map.end() && n);
