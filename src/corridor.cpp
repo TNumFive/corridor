@@ -149,7 +149,7 @@ void passage::clear_all_viewed()
         return;
     }
     artifact_index newest_all_viewed = artifact_index::max();
-    shared_lock<shared_timed_mutex> subscribing_lock{subscribing};
+    unique_lock<shared_timed_mutex> subscribing_lock{subscribing};
     for (const auto &p : viewer_map)
     {
         if (p.second < newest_all_viewed)
